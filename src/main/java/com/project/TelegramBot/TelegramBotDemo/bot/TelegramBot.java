@@ -54,77 +54,69 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        if (update.hasCallbackQuery()) {
-            String data = update.getCallbackQuery().getData();
-            Long chatId = update.getCallbackQuery().getMessage().getChatId();
+        var message = update.getMessage().getText();
+        var chatId = update.getMessage().getChatId();
 
-            var text = "Call back query check";
-            sendMessage(chatId, text);
+        if (isConverter) {
+            convertEndCommand(chatId, update);
+        } else if (update.hasCallbackQuery()) {
+            String callBackQuery = update.getCallbackQuery().getData();
+            Long chatIdCallBack = update.getCallbackQuery().getMessage().getChatId();
+
+            if (callBackQuery.equals("CONVERTER_BUTTON")) {
+                convertCommand(chatIdCallBack);
+            } else if (callBackQuery.equals("HELP_CONVERTER_COMMAND")) {
+                var text = """
+                            Для конвертации валюты введите запрос следующего формата:
+                            'usd 10.0', где
+                            usd - код валюты,
+                            10.0 - значение валюты, которое необходимо конвертировать.
+
+                            Коды валют, с которыми работает бот:
+                            usd - доллар США;
+                            eur - евро;
+                            cad - канадский доллар;
+                            gbp - фунт стерлингов;
+                            chf - швейцарский франк;
+                            cny - китайский юань.
+                            """;
+                sendMessageWithButtonConverter(chatIdCallBack, text);
+            } else if (callBackQuery.equals("HELP")) {
+                helpCommand(chatIdCallBack);
+            }
+        } else {
+            switch (message) {
+                case START -> {
+                    String userName = update.getMessage().getChat().getUserName();
+                    startCommand(chatId, userName);
+                }
+                case USD -> {
+                    usdCommand(chatId);
+                }
+                case EUR -> {
+                    eurCommand(chatId);
+                }
+                case CAD -> {
+                    cadCommand(chatId);
+                }
+                case GBP -> {
+                    gbpCommand(chatId);
+                }
+                case CHF -> {
+                    chfCommand(chatId);
+                }
+                case CNY -> {
+                    cnyCommand(chatId);
+                }
+                case CONVERT -> {
+                    convertCommand(chatId);
+                }
+                case HELP -> {
+                    helpCommand(chatId);
+                }
+                default -> unknownCommand(chatId);
+            }
         }
-
-//        var message = update.getMessage().getText();
-//        var chatId = update.getMessage().getChatId();
-//
-//        if (isConverter) {
-//            convertEndCommand(chatId, update);
-//        } else if (update.hasCallbackQuery()) {
-//            String callBackQuery = update.getCallbackQuery().getData();
-//            Long chatIdCallBack = update.getCallbackQuery().getMessage().getChatId();
-//
-//            if (callBackQuery.equals("CONVERTER_BUTTON")) {
-//                convertCommand(chatIdCallBack);
-//            } else if (callBackQuery.equals("HELP_CONVERTER_COMMAND")) {
-//                var text = """
-//                            Для конвертации валюты введите запрос следующего формата:
-//                            'usd 10.0', где
-//                            usd - код валюты,
-//                            10.0 - значение валюты, которое необходимо конвертировать.
-//
-//                            Коды валют, с которыми работает бот:
-//                            usd - доллар США;
-//                            eur - евро;
-//                            cad - канадский доллар;
-//                            gbp - фунт стерлингов;
-//                            chf - швейцарский франк;
-//                            cny - китайский юань.
-//                            """;
-//                sendMessageWithButtonConverter(chatIdCallBack, text);
-//            } else if (callBackQuery.equals("HELP")) {
-//                helpCommand(chatIdCallBack);
-//            }
-//        } else {
-//            switch (message) {
-//                case START -> {
-//                    String userName = update.getMessage().getChat().getUserName();
-//                    startCommand(chatId, userName);
-//                }
-//                case USD -> {
-//                    usdCommand(chatId);
-//                }
-//                case EUR -> {
-//                    eurCommand(chatId);
-//                }
-//                case CAD -> {
-//                    cadCommand(chatId);
-//                }
-//                case GBP -> {
-//                    gbpCommand(chatId);
-//                }
-//                case CHF -> {
-//                    chfCommand(chatId);
-//                }
-//                case CNY -> {
-//                    cnyCommand(chatId);
-//                }
-//                case CONVERT -> {
-//                    convertCommand(chatId);
-//                }
-//                case HELP -> {
-//                    helpCommand(chatId);
-//                }
-//                default -> unknownCommand(chatId);
-//            }
-//        }
     }
 
     @Override
