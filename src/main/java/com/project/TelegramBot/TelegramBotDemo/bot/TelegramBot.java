@@ -12,7 +12,9 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -52,44 +54,77 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        var message = update.getMessage().getText();
-        var chatId = update.getMessage().getChatId();
+        if (update.hasCallbackQuery()) {
+            String data = update.getCallbackQuery().getData();
+            Long chatId = update.getCallbackQuery().getMessage().getChatId();
 
-        if (isConverter) {
-            convertEndCommand(chatId, update);
-        } else {
-            switch (message) {
-                case START -> {
-                    String userName = update.getMessage().getChat().getUserName();
-                    startCommand(chatId, userName);
-                }
-                case USD -> {
-                    usdCommand(chatId);
-                }
-                case EUR -> {
-                    eurCommand(chatId);
-                }
-                case CAD -> {
-                    cadCommand(chatId);
-                }
-                case GBP -> {
-                    gbpCommand(chatId);
-                }
-                case CHF -> {
-                    chfCommand(chatId);
-                }
-                case CNY -> {
-                    cnyCommand(chatId);
-                }
-                case CONVERT -> {
-                    convertCommand(chatId);
-                }
-                case HELP -> {
-                    helpCommand(chatId);
-                }
-                default -> unknownCommand(chatId);
-            }
+            var text = "Call back query check";
+            sendMessage(chatId, text);
         }
+
+//        var message = update.getMessage().getText();
+//        var chatId = update.getMessage().getChatId();
+//
+//        if (isConverter) {
+//            convertEndCommand(chatId, update);
+//        } else if (update.hasCallbackQuery()) {
+//            String callBackQuery = update.getCallbackQuery().getData();
+//            Long chatIdCallBack = update.getCallbackQuery().getMessage().getChatId();
+//
+//            if (callBackQuery.equals("CONVERTER_BUTTON")) {
+//                convertCommand(chatIdCallBack);
+//            } else if (callBackQuery.equals("HELP_CONVERTER_COMMAND")) {
+//                var text = """
+//                            Для конвертации валюты введите запрос следующего формата:
+//                            'usd 10.0', где
+//                            usd - код валюты,
+//                            10.0 - значение валюты, которое необходимо конвертировать.
+//
+//                            Коды валют, с которыми работает бот:
+//                            usd - доллар США;
+//                            eur - евро;
+//                            cad - канадский доллар;
+//                            gbp - фунт стерлингов;
+//                            chf - швейцарский франк;
+//                            cny - китайский юань.
+//                            """;
+//                sendMessageWithButtonConverter(chatIdCallBack, text);
+//            } else if (callBackQuery.equals("HELP")) {
+//                helpCommand(chatIdCallBack);
+//            }
+//        } else {
+//            switch (message) {
+//                case START -> {
+//                    String userName = update.getMessage().getChat().getUserName();
+//                    startCommand(chatId, userName);
+//                }
+//                case USD -> {
+//                    usdCommand(chatId);
+//                }
+//                case EUR -> {
+//                    eurCommand(chatId);
+//                }
+//                case CAD -> {
+//                    cadCommand(chatId);
+//                }
+//                case GBP -> {
+//                    gbpCommand(chatId);
+//                }
+//                case CHF -> {
+//                    chfCommand(chatId);
+//                }
+//                case CNY -> {
+//                    cnyCommand(chatId);
+//                }
+//                case CONVERT -> {
+//                    convertCommand(chatId);
+//                }
+//                case HELP -> {
+//                    helpCommand(chatId);
+//                }
+//                default -> unknownCommand(chatId);
+//            }
+//        }
     }
 
     @Override
@@ -101,7 +136,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         var text = """
                 Добро пожаловать, %s!
 
-                Здесь Вы сможете узнать оффициальные курсы валют на сегодня, установленные ЦБ РФ.
+                Здесь Вы сможете узнать официальные курсы валют на сегодня, установленные ЦБ РФ.
 
                 Для этого воспользуйтесь командами:
                 /usd - курс доллара США;
@@ -111,7 +146,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 /chf - курс швейцарского франка;
                 /cny - курс китайского юаня:
                 /converter - режим конвертации валюты;
-                /help - получение справки.
+                /help - справочная информация.
                 """;
         var formattedText = String.format(text, userName);
         sendMessage(chatId, formattedText);
@@ -377,13 +412,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             default -> {
-//                formattedText = """
-//                Вы ввели неверный запрос.
-//
-//                Запустите заново режим конвертации валюты (/converter), а затем введите корректный запрос на конвертацию.
-//                """;
-                var text = "Создать метод sendMessageWithButton, чтобы под сообщением об ошибке была кнопка вызова метода /converter";
-                sendMessage(chatId, text);
+                var text = """
+                Вы ввели неверный запрос.
+
+                Запустите заново режим конвертации валюты, а затем введите корректный запрос на конвертацию.
+                Либо воспользуйтесь справочной информацией.
+                """;
+                sendMessageWithButtons(chatId, text);
             }
         }
 
@@ -459,6 +494,77 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardMarkup.setKeyboard(keyboardRows);
 
         sendMessage.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            LOG.error("Ошибка отправки сообщения", e);
+        }
+    }
+
+    private void sendMessageWithButtonConverter(Long chatId, String text) {
+        var chatIdStr = String.valueOf(chatId);
+        var sendMessage = new SendMessage(chatIdStr, text);
+
+        InlineKeyboardMarkup markupInLine = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine = new ArrayList<>();
+
+        var converterButton = new InlineKeyboardButton();
+        converterButton.setText("Converter");
+        converterButton.setCallbackData("CONVERTER_BUTTON ");
+
+        rowInLine.add(converterButton);
+
+        rowsInLine.add(rowInLine);
+
+        markupInLine.setKeyboard(rowsInLine);
+
+        sendMessage.setReplyMarkup(markupInLine);
+
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            LOG.error("Ошибка отправки сообщения", e);
+        }
+    }
+
+    private void sendMessageWithButtons(Long chatId, String text) {
+        var chatIdStr = String.valueOf(chatId);
+        var sendMessage = new SendMessage(chatIdStr, text);
+
+        InlineKeyboardMarkup markupInLine = new InlineKeyboardMarkup();
+
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine1 = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine2 = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine3 = new ArrayList<>();
+
+        var converterButton = new InlineKeyboardButton();
+        converterButton.setText("Режим \"Конвертации валюты\"");
+        converterButton.setCallbackData("CONVERTER_BUTTON");
+
+        var helpConverterButton = new InlineKeyboardButton();
+        helpConverterButton.setText("Help \"Конвертация валюты\"");
+        helpConverterButton.setCallbackData("HELP_CONVERTER_COMMAND");
+
+        var helpButton = new InlineKeyboardButton();
+        helpButton.setText("Help");
+        helpButton.setCallbackData("HELP");
+
+        rowInLine1.add(converterButton);
+        rowsInLine.add(rowInLine1);
+
+        rowInLine2.add(helpConverterButton);
+        rowsInLine.add(rowInLine2);
+
+        rowInLine3.add(helpButton);
+        rowsInLine.add(rowInLine3);
+
+        markupInLine.setKeyboard(rowsInLine);
+
+        sendMessage.setReplyMarkup(markupInLine);
 
         try {
             execute(sendMessage);
