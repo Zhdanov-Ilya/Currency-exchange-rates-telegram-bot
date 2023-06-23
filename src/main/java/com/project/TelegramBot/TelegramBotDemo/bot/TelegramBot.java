@@ -52,6 +52,13 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (!update.hasMessage() || !update.getMessage().hasText()) {
             return;
+        } else if (update.hasCallbackQuery()) {
+            String callBackQuery = update.getCallbackQuery().getData();
+            Long chatIdCallBack = update.getCallbackQuery().getMessage().getChatId();
+
+            if (callBackQuery.equals("CONVERTER_BUTTON")) {
+                convertCommand(chatIdCallBack);
+            }
         }
 
         var message = update.getMessage().getText();
@@ -59,31 +66,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         if (isConverter) {
             convertEndCommand(chatId, update);
-        } else if (update.hasCallbackQuery()) {
-            String callBackQuery = update.getCallbackQuery().getData();
-            Long chatIdCallBack = update.getCallbackQuery().getMessage().getChatId();
-
-            if (callBackQuery.equals("CONVERTER_BUTTON")) {
-                convertCommand(chatIdCallBack);
-            } else if (callBackQuery.equals("HELP_CONVERTER_COMMAND")) {
-                var text = """
-                            Для конвертации валюты введите запрос следующего формата:
-                            'usd 10.0', где
-                            usd - код валюты,
-                            10.0 - значение валюты, которое необходимо конвертировать.
-
-                            Коды валют, с которыми работает бот:
-                            usd - доллар США;
-                            eur - евро;
-                            cad - канадский доллар;
-                            gbp - фунт стерлингов;
-                            chf - швейцарский франк;
-                            cny - китайский юань.
-                            """;
-                sendMessageWithButtonConverter(chatIdCallBack, text);
-            } else if (callBackQuery.equals("HELP")) {
-                helpCommand(chatIdCallBack);
-            }
         } else {
             switch (message) {
                 case START -> {
@@ -407,10 +389,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                 var text = """
                 Вы ввели неверный запрос.
 
-                Запустите заново режим конвертации валюты, а затем введите корректный запрос на конвертацию.
-                Либо воспользуйтесь справочной информацией.
+                Запустите заново режим конвертации валюты (/converter), а затем введите корректный запрос на конвертацию.
+                Либо воспользуйтесь справочной информацией (/help).
                 """;
-                sendMessageWithButtons(chatId, text);
+                sendMessage(chatId, text);
             }
         }
 
@@ -486,77 +468,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardMarkup.setKeyboard(keyboardRows);
 
         sendMessage.setReplyMarkup(keyboardMarkup);
-
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            LOG.error("Ошибка отправки сообщения", e);
-        }
-    }
-
-    private void sendMessageWithButtonConverter(Long chatId, String text) {
-        var chatIdStr = String.valueOf(chatId);
-        var sendMessage = new SendMessage(chatIdStr, text);
-
-        InlineKeyboardMarkup markupInLine = new InlineKeyboardMarkup();
-
-        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
-        List<InlineKeyboardButton> rowInLine = new ArrayList<>();
-
-        var converterButton = new InlineKeyboardButton();
-        converterButton.setText("Converter");
-        converterButton.setCallbackData("CONVERTER_BUTTON ");
-
-        rowInLine.add(converterButton);
-
-        rowsInLine.add(rowInLine);
-
-        markupInLine.setKeyboard(rowsInLine);
-
-        sendMessage.setReplyMarkup(markupInLine);
-
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            LOG.error("Ошибка отправки сообщения", e);
-        }
-    }
-
-    private void sendMessageWithButtons(Long chatId, String text) {
-        var chatIdStr = String.valueOf(chatId);
-        var sendMessage = new SendMessage(chatIdStr, text);
-
-        InlineKeyboardMarkup markupInLine = new InlineKeyboardMarkup();
-
-        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
-        List<InlineKeyboardButton> rowInLine1 = new ArrayList<>();
-        List<InlineKeyboardButton> rowInLine2 = new ArrayList<>();
-        List<InlineKeyboardButton> rowInLine3 = new ArrayList<>();
-
-        var converterButton = new InlineKeyboardButton();
-        converterButton.setText("Режим \"Конвертации валюты\"");
-        converterButton.setCallbackData("CONVERTER_BUTTON");
-
-        var helpConverterButton = new InlineKeyboardButton();
-        helpConverterButton.setText("Help \"Конвертация валюты\"");
-        helpConverterButton.setCallbackData("HELP_CONVERTER_COMMAND");
-
-        var helpButton = new InlineKeyboardButton();
-        helpButton.setText("Help");
-        helpButton.setCallbackData("HELP");
-
-        rowInLine1.add(converterButton);
-        rowsInLine.add(rowInLine1);
-
-        rowInLine2.add(helpConverterButton);
-        rowsInLine.add(rowInLine2);
-
-        rowInLine3.add(helpButton);
-        rowsInLine.add(rowInLine3);
-
-        markupInLine.setKeyboard(rowsInLine);
-
-        sendMessage.setReplyMarkup(markupInLine);
 
         try {
             execute(sendMessage);
