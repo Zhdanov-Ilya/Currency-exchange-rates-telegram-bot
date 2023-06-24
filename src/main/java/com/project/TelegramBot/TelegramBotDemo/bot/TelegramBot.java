@@ -52,13 +52,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (!update.hasMessage() || !update.getMessage().hasText()) {
             return;
-        } else if (update.hasCallbackQuery()) {
-            String callBackQuery = update.getCallbackQuery().getData();
-            Long chatIdCallBack = update.getCallbackQuery().getMessage().getChatId();
-
-            if (callBackQuery.equals("CONVERTER_BUTTON")) {
-                convertCommand(chatIdCallBack);
-            }
         }
 
         var message = update.getMessage().getText();
