@@ -379,20 +379,16 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             default -> {
-                var text = """
+                formattedText = """
                 Вы ввели неверный запрос.
 
                 Запустите заново режим конвертации валюты (/converter), а затем введите корректный запрос на конвертацию.
                 Либо воспользуйтесь справочной информацией (/help).
                 """;
-                sendMessage(chatId, text);
             }
         }
 
-        if (!formattedText.isEmpty()) {
-            sendMessage(chatId, formattedText);
-        }
-
+        sendMessage(chatId, formattedText);
         isConverter = false;
     }
 
